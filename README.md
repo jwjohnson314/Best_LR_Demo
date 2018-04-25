@@ -2,16 +2,18 @@
 This is a demo of 
 - The method described [here](https://arxiv.org/pdf/1506.01186.pdf) for finding the best learning rate; and
 - The use of cyclical learning rates (from the same paper).
+It's not a drop-in module to help find a good learning rate for other problems, though the method is transferrable.
 
 # What It Does
-Takes a 'warm-up' run of a simple LeNet-style MNIST or a WRN-28-10 Cifar10 model [https://arxiv.org/abs/1605.07146](https://arxiv.org/abs/1605.07146), varying the learning rate from a very small number to a very large number, to determine the value at which the loss is as small as possible. Then either trains the model at a multiple of that learning rate or cycles the learning rate, depending on flags passed at runtime.
+Takes a 'warm-up' run of a simple LeNet-style MNIST or a WRN-28-10 Cifar10 model ([https://arxiv.org/abs/1605.07146](https://arxiv.org/abs/1605.07146)), varying the learning rate from a very small number to a very large number, to determine the value at which the loss is as small as possible. Then either trains the model at a multiple of that learning rate or cycles the learning rate, depending on flags passed at runtime.
 
 # Requirements
-In addition to Keras with Tensorflow backend, and the usual NumPy/Matplotlib/SciPy stack, you need the custom clr_callback that can be found [here](https://github.com/bckenstler/CLR/blob/master/clr_callback.py).  
+In addition to Keras with Tensorflow backend and the usual NumPy/Matplotlib/SciPy stack, you need the custom clr_callback for Keras found [here](https://github.com/bckenstler/CLR/blob/master/clr_callback.py).  
 
 # Usage
 Basic usage: `python best_lr.py`
-With Cifar10 and some additional flags: `python best_lr.py --dataset=cifar10 --num_epochs=100 --lr_min=1e-6 --cycle`
+
+With Cifar10 and some additional flags: `python best_lr.py --dataset=cifar10 --num_epochs=100 --lr_min=1e-6 --cycle --save_model`
 
 # Options
 
@@ -43,4 +45,4 @@ Both the MNIST and the Cifar10 models are pretty much hardcoded, but options to 
 
 # Performance
 
-On Cifar10, with learning rate cycling, the model will typically get a validation accuracy in the mid/high 80's without any dataset augmentation.
+On Cifar10, with learning rate cycling and batch size 128, typically get a validation accuracy in the high 80's in well under 100 epochs without any dataset augmentation.

@@ -33,8 +33,8 @@ parser.add_argument('--num_learning_batches', default=4000, type=int, help='how 
 parser.add_argument('--num_epochs', default=55, type=int, help='number of epochs to train for')
 parser.add_argument('--lr_min', default=1e-4, type=float, help='minimum learning rate to try')
 parser.add_argument('--lr_max', default=10, type=float, help='maximum learning rate to try')
-parser.add_argument('--lr_max_multiplier', default=1, type=float, help='train at lr_max_multiplier * <lr with min loss>')
-parser.add_argument('--lr_min_multiplier', default=0.1, type=float, help='min learning rate during cycle lr_min_multiplier * <lr with min loss> (only used when cycling learning rate)')
+parser.add_argument('--lr_max_multiplier', default=1, type=float, help='lr_max_multiplier * <lr with min loss> is the learning rate when using a fixed learning rate, and the max learning rate when cycling.')
+parser.add_argument('--lr_min_multiplier', default=0.0001, type=float, help='min learning rate during cycle lr_min_multiplier * <lr with min loss> (only used when cycling learning rate)')
 parser.add_argument('--cycle', action='store_true', help='cycle the learning rate?')
 parser.add_argument('--weight_decay', default=0.0005, type=float, help='weight decay? (only applied to cifar model)')
 # plotting and saving options
