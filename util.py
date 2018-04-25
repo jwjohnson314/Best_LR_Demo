@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import keras.backend as K
 import tensorflow as tf
 
+plt.style.use('bmh')
+
 def get_session():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -39,14 +41,12 @@ def plot_lr_curve(lrs, train_losses, smoothed_losses, clip=5):
 
 
 def plot_training_curves(history):    
-    fig, ax = plt.subplots(1, 3, figsize=(16, 6))
+    fig, ax = plt.subplots(1, 2, figsize=(16, 6))
     ax[0].plot(history.history['acc'], label='train acc')
     ax[0].plot(history.history['val_acc'], label='val acc')
     ax[1].plot(history.history['loss'], label='train loss')
     ax[1].plot(history.history['val_loss'], label='val loss')
-    ax[2].plot(history.history['lr'], label='learning rate')
     ax[0].legend()
     ax[1].legend()
-    ax[2].legend()
     plt.show()
 
