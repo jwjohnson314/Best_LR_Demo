@@ -5,17 +5,20 @@ from keras.regularizers import l2
 
 
 # conv block for residual cifar10 model
-def conv_block(input_depth, output_depth, strides, prev_layer, init, activation, padding, regularizer):
+def conv_block(input_depth, output_depth, strides, prev_layer, init,
+        activation, padding, regularizer):
     if input_depth == output_depth:
         x = BatchNormalization()(prev_layer)
         x = Activation(activation)(x)
-        x = Conv2D(output_depth, 3, strides=strides, padding=padding, kernel_initializer=init,
-                   kernel_regularizer=regularizer, bias_regularizer=regularizer)(x)
+        x = Conv2D(output_depth, 3, strides=strides, padding=padding,
+                kernel_initializer=init, kernel_regularizer=regularizer,
+                bias_regularizer=regularizer)(x)
     else:
         x = prev_layer
         # downsample on width increase
-        x = Conv2D(output_depth, 3, strides=(2, 2), padding=padding, kernel_initializer=init,
-                   kernel_regularizer=regularizer, bias_regularizer=regularizer)(x)
+        x = Conv2D(output_depth, 3, strides=(2, 2), padding=padding,
+                kernel_initializer=init, kernel_regularizer=regularizer,
+                bias_regularizer=regularizer)(x)
     x = BatchNormalization()(x)
     x = Activation(activation)(x)
     x = Conv2D(output_depth, 3, padding=padding, kernel_initializer=init,
@@ -23,24 +26,30 @@ def conv_block(input_depth, output_depth, strides, prev_layer, init, activation,
     return x
 
 # skip block for residual cifar10 model
-def skip_block(input_depth, output_depth, strides, prev_layer, init, padding, regularizer):
+def skip_block(input_depth, output_depth, strides, 
+        prev_layer, init, padding, regularizer):
     if input_depth != output_depth:
-        prev_layer = Conv2D(output_depth, 1, strides=(2, 2), padding=padding, kernel_initializer=init,
-                            kernel_regularizer=regularizer, use_bias=False)(prev_layer)
+        prev_layer = Conv2D(output_depth, 1, strides=(2, 2), padding=padding,
+                kernel_initializer=init, kernel_regularizer=regularizer,
+                use_bias=False)(prev_layer)
     return prev_layer
 
 
 # residual block for cifar10 model
-def residual_block(input_depth, output_depth, strides, prev_layer, init, activation, padding, regularizer):
-    conv = conv_block(input_depth, output_depth, strides, prev_layer, init, activation, padding, regularizer)
-    skip = skip_block(input_depth, output_depth, strides, prev_layer, init, padding, regularizer)
+def residual_block(input_depth, output_depth, strides, prev_layer, init,
+        activation, padding, regularizer):
+    conv = conv_block(input_depth, output_depth, strides, prev_layer, init,
+            activation, padding, regularizer)
+    skip = skip_block(input_depth, output_depth, strides, prev_layer, init,
+            padding, regularizer)
     add = Add()([conv, skip])
     return add
 
 
 def mnist_model(activation='relu', padding='same'):
     model = Sequential()
-    model.add(Conv2D(16, 5, activation=activation, padding=padding, input_shape=(28, 28, 1)))
+    model.add(Conv2D(16, 5, activation=activation, padding=padding,
+        input_shape=(28, 28, 1)))
     model.add(MaxPool2D())
     model.add(Conv2D(32, 5, activation=activation, padding=padding))
     model.add(MaxPool2D())
@@ -50,7 +59,8 @@ def mnist_model(activation='relu', padding='same'):
     return model
 
 
-def cifar_model(init='he_normal', strides=(1, 1), padding='same', activation='relu', weight_decay=0.0005):
+def cifar_model(init='he_normal', strides=(1, 1), padding='same',
+        activation='relu', weight_decay=0.0005):
     # WRN-28-10, without dropout https://arxiv.org/abs/1605.07146
     regularizer=l2(weight_decay)
 
@@ -60,16 +70,20 @@ def cifar_model(init='he_normal', strides=(1, 1), padding='same', activation='re
     batch0 = BatchNormalization()(conv0)
     act0 = Activation(activation)(batch0)
 
-    # first residual block slightly different from the rest because there is no downsampling
-    conv1_l = Conv2D(160, 3, padding=padding, strides=strides, kernel_initializer=init, bias_initializer=init,
-            kernel_regularizer=regularizer, bias_regularizer=regularizer)(act0)
+    # first residual block slightly different from the rest
+    # because there is no downsampling
+    conv1_l = Conv2D(160, 3, padding=padding, strides=strides, kernel_initializer=init,
+            bias_initializer=init, kernel_regularizer=regularizer,
+            bias_regularizer=regularizer)(act0)
     batch1_l = BatchNormalization()(conv1_l)
     act1_l = Activation(activation)(batch1_l)
-    conv2_l = Conv2D(160, 3, padding=padding, strides=strides, kernel_initializer=init, bias_initializer=init,
-            kernel_regularizer=regularizer, bias_regularizer=regularizer)(act1_l)
+    conv2_l = Conv2D(160, 3, padding=padding, strides=strides, kernel_initializer=init,
+            bias_initializer=init, kernel_regularizer=regularizer,
+            bias_regularizer=regularizer)(act1_l)
 
-    conv1_r = Conv2D(160, 1, padding=padding, strides=strides, kernel_initializer=init, bias_initializer=init,
-            kernel_regularizer=regularizer, bias_regularizer=regularizer)(act0)
+    conv1_r = Conv2D(160, 1, padding=padding, strides=strides, kernel_initializer=init,
+            bias_initializer=init, kernel_regularizer=regularizer,
+            bias_regularizer=regularizer)(act0)
     add1 = Add()([conv2_l, conv1_r])
     
     # now the 'normal' residual blocks with downsampling at each width change
@@ -92,7 +106,7 @@ def cifar_model(init='he_normal', strides=(1, 1), padding='same', activation='re
     block3_act = Activation(activation)(block3_batch)
     pool = AveragePooling2D(pool_size=(8, 8), strides=(1, 1))(block3_act)
     flat = Flatten()(pool)
-    outputs = Dense(10, kernel_initializer=init, kernel_regularizer=regularizer, bias_regularizer=regularizer,
-                    activation='softmax')(flat)
+    outputs = Dense(10, kernel_initializer=init, kernel_regularizer=regularizer,
+            bias_regularizer=regularizer, activation='softmax')(flat)
 
     return Model(inputs=inputs, outputs=outputs)
