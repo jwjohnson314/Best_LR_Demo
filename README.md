@@ -45,5 +45,5 @@ Both the MNIST and the Cifar10 models are pretty much hardcoded, but options to 
 - `--log_dir`: Where to save tensorboard logs/model weights. default is `'./logs'`
 
 # Performance
-On Cifar10, with learning rate cycling, batch size 128, and all other parameters as default will typically get a test accuracy in the high 80's or low 90's in 20-30 epochs. On MNIST, batch size 64, cycling the learning rate, typically acheives greater than 99% test accuracy in under 10 epochs.
+On Cifar10, with learning rate cycling, batch size 128, and all other parameters as default will typically get a test accuracy in the high 80's or low 90's in 20-30 epochs (approximately one hour on a single Titan Xp). On MNIST, batch size 64, cycling the learning rate, typically acheives greater than 99% test accuracy in under 10 epochs.
 
