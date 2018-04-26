@@ -147,7 +147,7 @@ else:
 if args.save_model:
     if not os.path.isdir(os.path.join(args.log_dir, 'models')):
         os.mkdir(os.path.join(args.log_dir, 'models'))
-    check = ModelCheckpoint(os.path.join(args.log_dir, 'models', args.dataset + '.epoch{:02d}.h5'))
+    check = ModelCheckpoint(os.path.join(args.log_dir, 'models', args.dataset + '_epoch_{epoch:02d}.h5'))
     callbacks.append(check)
 
 hist = model.fit(xtr, ytr, validation_split=0.2, batch_size=args.batch_size, shuffle=True, epochs=args.num_epochs, callbacks=callbacks)
