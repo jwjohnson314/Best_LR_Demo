@@ -37,6 +37,7 @@ Both the MNIST and the Cifar10 models are pretty much hardcoded, but options to 
 - `--lr_max_multiplier`: when training with fixed learning rate, that rate will be `lr_max_multiplier * <lr-with-min-loss>`. When cycling learning rate, this will be the maximum learning rate. Default is `1`.
 - `--lr_min_multiplier`: When cycling the learning rate, the minimum learning rate will be `lr_min_multiplier * <lr-with-min-loss>`. Default is `0.1`.
 - `--cycle`: Cycle the learning rate? Default is false
+- `--skip_test`: Want to skip the learning rate test and just get on with training? Specify learning rate here. This learning rate will be treated as `<lr-with-max-loss>` (See `lr_max_multiplier` and `lr_min_multiplier` above). Should be a float and default is `None`.
 
 ## Plotting and saving options
 - `--no_plots`: Suppress plot generation?
@@ -45,4 +46,4 @@ Both the MNIST and the Cifar10 models are pretty much hardcoded, but options to 
 
 # Performance
 
-On Cifar10, with learning rate cycling and batch size 128, typically get a validation accuracy in the high 80's in well under 100 epochs without any dataset augmentation.
+On Cifar10, with learning rate cycling, batch size 128, and all other parameters as default will typically get a test accuracy in the high 80's or low 90's in 20-30 epochs.

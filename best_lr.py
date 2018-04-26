@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='mnist', help='one of mnist, cifar10')
 parser.add_argument('--kernel_initializer', default='he_normal', help='kernel initializer, only modifies cifar10 model')
 parser.add_argument('--activation', default='relu', help='activation function, only modifies cifar10 model')
+parser.add_argument('--weight_decay', default=0.0005, type=float, help='weight decay? (only applied to cifar model)')
 
 # training and learning rate parameters
 parser.add_argument('--optimizer', default='sgd', help='one of sgd, adam, or rmsprop')
@@ -33,10 +34,11 @@ parser.add_argument('--num_learning_batches', default=4000, type=int, help='how 
 parser.add_argument('--num_epochs', default=55, type=int, help='number of epochs to train for')
 parser.add_argument('--lr_min', default=1e-4, type=float, help='minimum learning rate to try')
 parser.add_argument('--lr_max', default=10, type=float, help='maximum learning rate to try')
-parser.add_argument('--lr_max_multiplier', default=1, type=float, help='lr_max_multiplier * <lr with min loss> is the learning rate when using a fixed learning rate, and the max learning rate when cycling.')
+parser.add_argument('--lr_max_multiplier', default=0.5, type=float, help='lr_max_multiplier * <lr with min loss> is the learning rate when using a fixed learning rate, and the max learning rate when cycling.')
 parser.add_argument('--lr_min_multiplier', default=0.0001, type=float, help='min learning rate during cycle lr_min_multiplier * <lr with min loss> (only used when cycling learning rate)')
 parser.add_argument('--cycle', action='store_true', help='cycle the learning rate?')
-parser.add_argument('--weight_decay', default=0.0005, type=float, help='weight decay? (only applied to cifar model)')
+parser.add_argument('--skip_test', default=None, type=float, help='skip the learning rate test and set a learning rate')
+
 # plotting and saving options
 parser.add_argument('--no_plots', action='store_false', help='suppress plotting')
 parser.add_argument('--save_model', action='store_true', help='save the model?')
@@ -71,55 +73,59 @@ else:
     optim = RMSprop()
 
 model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['acc'])
-
-# log scale
-q = (args.lr_max / args.lr_min)**(1 / args.num_learning_batches)
-lrs = [(q ** i) * args.lr_min for i in range(args.num_learning_batches)]
-
-beta = 0.98
-
-train_losses = []
-smoothed_losses = []
-avg_loss = 0.0
-min_smoothed_loss = np.inf
-
-print('optimizer is {}'.format(args.optimizer))
-print('finding best learning rate by training for {} minibatches'.format(args.num_learning_batches))
-
-# shuffle the data
-idx = list(range(len(xtr)))
-np.random.shuffle(idx)
-xtr = xtr[idx, :, :, :]
-ytr = ytr[idx, :]
-
 batches_per_epoch = int(len(xtr) // args.batch_size)
-for i in tqdm(range(args.num_learning_batches)):
-    K.set_value(model.optimizer.lr, lrs[i])
-    batch_index = i
-    if batch_index >= batches_per_epoch:
-        batch_index %= batches_per_epoch
-    batch_loss, _ = model.train_on_batch(xtr[args.batch_size * batch_index: args.batch_size * (batch_index + 1), :, :, :],
-                                      ytr[args.batch_size * batch_index: args.batch_size * (batch_index + 1), :])
 
-    avg_loss = beta * avg_loss + (1 - beta) * batch_loss    
-    train_losses.append(batch_loss)
+if args.skip_test is None:
+    # log scale
+    q = (args.lr_max / args.lr_min)**(1 / args.num_learning_batches)
+    lrs = [(q ** i) * args.lr_min for i in range(args.num_learning_batches)]
 
-    # exponential smoothing
-    smoothed_loss = avg_loss / (1 - beta**(i + 1))
-    if smoothed_loss < min_smoothed_loss:
-        min_smoothed_loss = smoothed_loss
-    smoothed_losses.append(smoothed_loss)
-    if smoothed_loss > 4 * min_smoothed_loss:
-        break
-   
-print('min_smoothed_loss: {}'.format(min_smoothed_loss))
-print('learning rate at min: {}'.format(lrs[smoothed_losses.index(min_smoothed_loss)]))
+    beta = 0.98
 
-if args.no_plots:
-    plot_lr_curve(lrs, train_losses, smoothed_losses, clip=5)
+    train_losses = []
+    smoothed_losses = []
+    avg_loss = 0.0
+    min_smoothed_loss = np.inf
 
-# train at fixed best learning rate
-lr = args.lr_max_multiplier * lrs[smoothed_losses.index(min_smoothed_loss)]
+    print('optimizer is {}'.format(args.optimizer))
+    print('finding best learning rate by training for {} minibatches'.format(args.num_learning_batches))
+
+    # shuffle the data
+    idx = list(range(len(xtr)))
+    np.random.shuffle(idx)
+    xtr = xtr[idx, :, :, :]
+    ytr = ytr[idx, :]
+
+    for i in tqdm(range(args.num_learning_batches)):
+        K.set_value(model.optimizer.lr, lrs[i])
+        batch_index = i
+        if batch_index >= batches_per_epoch:
+            batch_index %= batches_per_epoch
+        batch_loss, _ = model.train_on_batch(xtr[args.batch_size * batch_index: args.batch_size * (batch_index + 1), :, :, :],
+                                          ytr[args.batch_size * batch_index: args.batch_size * (batch_index + 1), :])
+
+        avg_loss = beta * avg_loss + (1 - beta) * batch_loss    
+        train_losses.append(batch_loss)
+
+        # exponential smoothing
+        smoothed_loss = avg_loss / (1 - beta**(i + 1))
+        if smoothed_loss < min_smoothed_loss:
+            min_smoothed_loss = smoothed_loss
+        smoothed_losses.append(smoothed_loss)
+        if smoothed_loss > 4 * min_smoothed_loss:
+            break
+       
+    print('min_smoothed_loss: {}'.format(min_smoothed_loss))
+    print('learning rate at min: {}'.format(lrs[smoothed_losses.index(min_smoothed_loss)]))
+
+    if args.no_plots:
+        plot_lr_curve(lrs, train_losses, smoothed_losses, clip=5)
+
+    lr = args.lr_max_multiplier * lrs[smoothed_losses.index(min_smoothed_loss)]
+else:
+    lr = args.lr_max_multiplier * args.skip_test
+
+
 print('Training for {} epochs with {} batches per epoch'.format(args.num_epochs, batches_per_epoch))
 K.set_value(optim.lr, lr)
 model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['acc'])
@@ -134,7 +140,10 @@ tb = TensorBoard(log_dir=args.log_dir, histogram_freq=0, write_graph=False)
 callbacks = [early, tb]
 
 if args.cycle:
-    base_lr = args.lr_min_multiplier * lrs[smoothed_losses.index(min_smoothed_loss)]
+    if args.skip_test is not None:
+        base_lr = args.lr_min_multiplier * args.skip_test
+    else:
+        base_lr = args.lr_min_multiplier * lrs[smoothed_losses.index(min_smoothed_loss)]
     step_size = 4 * batches_per_epoch
     cycle = CyclicLR(base_lr=base_lr, max_lr=lr, step_size=step_size)
     callbacks.append(cycle)
